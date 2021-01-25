@@ -192,7 +192,7 @@ ious delta_yolo_box(box truth, float *x, float *biases, int n, int index, int i,
 //    printf("\n\n\n\n\nVALUES %f %f %f %f %f %f %f %f %f %d\n", truth.x, truth.y, pred.x, pred.y, truth.w, truth.h, pred.w, pred.h, all_ious.iou, iou_loss);
 
 //    if(all_ious.iou > 2*FLT_EPSILON) {
-    if(1) {
+    if(0) {
         float covpredw  = (pred.w/4.0f) * (pred.w/4.0f);
         float covtruthw = (truth.w/4.0f)*(truth.w/4.0f);
         float covpredh  = (pred.h/4.0f) * (pred.h/4.0f);
@@ -587,8 +587,8 @@ void *process_batch(void* ptr)
 
                 // range is 0 <= 1
                 args->tot_iou += all_ious.iou;
-//                args->tot_iou_loss += 1 - all_ious.iou;
-                args->tot_iou_loss += all_ious.ciou;
+                args->tot_iou_loss += 1 - all_ious.iou;
+//                args->tot_iou_loss += all_ious.ciou;
 
                 // range is -1 <= giou <= 1
                 tot_giou += all_ious.giou;
@@ -641,8 +641,8 @@ void *process_batch(void* ptr)
 
                         // range is 0 <= 1
                         args->tot_iou += all_ious.iou;
-//                        args->tot_iou_loss += 1 - all_ious.iou;
-                        args->tot_iou_loss += all_ious.ciou;
+                        args->tot_iou_loss += 1 - all_ious.iou;
+//                        args->tot_iou_loss += all_ious.ciou;
                         // range is -1 <= giou <= 1
                         tot_giou += all_ious.giou;
                         args->tot_giou_loss += 1 - all_ious.giou;
@@ -900,8 +900,8 @@ void forward_yolo_layer(const layer l, network_state state)
 
         loss /= l.batch;
 
-        fprintf(stderr, "v3 (%s loss, Normalizer: (iou: %.2f, obj: %.2f, cls: %.2f) Region %d Avg (IOU: %f), count: %d, total_loss = %f \n",
-            (l.iou_loss == MSE ? "mse" : (l.iou_loss == GIOU ? "giou" : "iou")), l.iou_normalizer, l.obj_normalizer, l.cls_normalizer, state.index, tot_iou / count, count, loss);
+//        fprintf(stderr, "v3 (%s loss, Normalizer: (iou: %.2f, obj: %.2f, cls: %.2f) Region %d Avg (IOU: %f), count: %d, total_loss = %f \n",
+//            (l.iou_loss == MSE ? "mse" : (l.iou_loss == GIOU ? "giou" : "iou")), l.iou_normalizer, l.obj_normalizer, l.cls_normalizer, state.index, tot_iou / count, count, loss);
     }
     else {
         // show detailed output
@@ -936,11 +936,11 @@ void forward_yolo_layer(const layer l, network_state state)
 
         // gIOU loss + MSE (objectness) loss
         if (l.iou_loss == MSE) {
-//            *(l.cost) = pow(mag_array(l.delta, l.outputs * l.batch), 2);
+            *(l.cost) = pow(mag_array(l.delta, l.outputs * l.batch), 2);
 
             ///////ADDED
-            avg_iou_loss = count > 0 ? l.iou_normalizer * (tot_iou_loss / count) : 0;
-            *(l.cost) = avg_iou_loss + classification_loss;
+//            avg_iou_loss = count > 0 ? l.iou_normalizer * (tot_iou_loss / count) : 0;
+//            *(l.cost) = avg_iou_loss + classification_loss;
 //            fprintf(stderr, "\n\n\nLOSS HERE\n\n\n\n");
             ///////
         }
@@ -962,8 +962,8 @@ void forward_yolo_layer(const layer l, network_state state)
         classification_loss /= l.batch;
         iou_loss /= l.batch;
 
-        fprintf(stderr, "v3 (%s loss, Normalizer: (iou: %.2f, obj: %.2f, cls: %.2f) Region %d Avg (IOU: %f), count: %d, class_loss = %f, iou_loss = %f, total_loss = %f \n",
-            (l.iou_loss == MSE ? "mse" : (l.iou_loss == GIOU ? "giou" : "iou")), l.iou_normalizer, l.obj_normalizer, l.cls_normalizer, state.index, tot_iou / count, count, classification_loss, iou_loss, loss);
+//        fprintf(stderr, "v3 (%s loss, Normalizer: (iou: %.2f, obj: %.2f, cls: %.2f) Region %d Avg (IOU: %f), count: %d, class_loss = %f, iou_loss = %f, total_loss = %f \n",
+//            (l.iou_loss == MSE ? "mse" : (l.iou_loss == GIOU ? "giou" : "iou")), l.iou_normalizer, l.obj_normalizer, l.cls_normalizer, state.index, tot_iou / count, count, classification_loss, iou_loss, loss);
 
         //fprintf(stderr, "v3 (%s loss, Normalizer: (iou: %.2f, cls: %.2f) Region %d Avg (IOU: %f, GIOU: %f), Class: %f, Obj: %f, No Obj: %f, .5R: %f, .75R: %f, count: %d, class_loss = %f, iou_loss = %f, total_loss = %f \n",
         //    (l.iou_loss == MSE ? "mse" : (l.iou_loss == GIOU ? "giou" : "iou")), l.iou_normalizer, l.obj_normalizer, state.index, tot_iou / count, tot_giou / count, avg_cat / class_count, avg_obj / count, avg_anyobj / (l.w*l.h*l.n*l.batch), recall / count, recall75 / count, count,
